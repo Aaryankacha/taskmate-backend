@@ -1,14 +1,24 @@
-# ✅ Already perfect Flask code — no changes needed
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import os
 from werkzeug.utils import secure_filename
+import replicate
+import os
+from dotenv import load_dotenv
 
+# 🔐 Load environment variables
+load_dotenv()
+REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
+replicate.Client(api_token=REPLICATE_API_TOKEN)
+
+# 🚀 Flask Setup
 app = Flask(__name__)
 CORS(app)
 
+# 📁 Uploads folder
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# ------------------ File Upload Endpoint ------------------
 
 @app.route("/upload", methods=["POST", "OPTIONS"])
 def upload_file():
@@ -31,6 +41,26 @@ def upload_file():
 @app.route("/uploads/<filename>")
 def serve_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
+
+# ------------------ TaskPilot Chat Endpoint ------------------
+
+@app.route("/ask", methods=["POST"])
+def ask_taskpilot():
+    prompt = request.get_json().get("prompt", "")
+    if not prompt:
+        return jsonify({"error": "Prompt is missing"}), 400
+
+    try:
+        # 💬 Generate chat response from Mistral
+        output = replicate.run(
+            "mistralai/mistral-7b-instruct-v0.1",
+            input={"prompt": f"{prompt}\n"}
+        )
+        return jsonify({"response": "".join(output)})
+    except Exception as e:
+        return jsonify({"error": f"TaskPilot Error: {str(e)}"}), 500
+
+# ------------------ Run Server ------------------
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000)
