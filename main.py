@@ -53,9 +53,15 @@ def ask_taskpilot():
     try:
         # 💬 Generate chat response from Mistral
         output = replicate.run(
-            "mistralai/mistral-7b-instruct-v0.1",
-            input={"prompt": f"{prompt}\n"}
-        )
+    "meta/llama-2-7b-chat",
+    input={
+        "prompt": prompt,
+        "temperature": 0.5,
+        "top_p": 0.9,
+        "max_new_tokens": 250,
+    }
+)
+
         return jsonify({"response": "".join(output)})
     except Exception as e:
         return jsonify({"error": f"TaskPilot Error: {str(e)}"}), 500
