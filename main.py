@@ -53,14 +53,14 @@ def ask_taskpilot():
     try:
         # 💬 Generate chat response from Mistral
         output = replicate.run(
-    "meta/llama-2-7b-chat",
-    input={
-        "prompt": prompt,
-        "temperature": 0.5,
-        "top_p": 0.9,
-        "max_new_tokens": 250,
-    }
-)
+            "meta/llama-2-7b-chat",
+            input={
+            "prompt": prompt,
+            "temperature": 0.5,
+            "top_p": 0.9,
+            "max_new_tokens": 250,
+            }
+        )
 
         return jsonify({"response": "".join(output)})
     except Exception as e:
