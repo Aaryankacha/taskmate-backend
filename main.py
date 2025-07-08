@@ -1,14 +1,13 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
-import replicate
+import requests
 import os
 from dotenv import load_dotenv
 
 # 🔐 Load environment variables
 load_dotenv()
-REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
-replicate.Client(api_token=REPLICATE_API_TOKEN)
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 # 🚀 Flask Setup
 app = Flask(__name__)
@@ -42,7 +41,7 @@ def upload_file():
 def serve_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
-# ------------------ TaskPilot Chat Endpoint ------------------
+# ------------------ TaskPilot Chat Endpoint (OpenRouter) ------------------
 
 @app.route("/ask", methods=["POST"])
 def ask_taskpilot():
@@ -51,18 +50,26 @@ def ask_taskpilot():
         return jsonify({"error": "Prompt is missing"}), 400
 
     try:
-        # 💬 Generate chat response from Mistral
-        output = replicate.run(
-            "meta/llama-2-7b-chat",
-            input={
-            "prompt": prompt,
-            "temperature": 0.5,
-            "top_p": 0.9,
-            "max_new_tokens": 250,
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "mistralai/mistral-7b-instruct",  # ✅ Free & Unlimited
+                "messages": [
+                    {"role": "system", "content": "You are TaskPilot, a helpful assistant."},
+                    {"role": "user", "content": prompt}
+                ]
             }
         )
 
-        return jsonify({"response": "".join(output)})
+        response.raise_for_status()
+        data = response.json()
+        reply = data["choices"][0]["message"]["content"]
+        return jsonify({"response": reply})
+
     except Exception as e:
         return jsonify({"error": f"TaskPilot Error: {str(e)}"}), 500
 
@@ -70,3 +77,4 @@ def ask_taskpilot():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000)
+
