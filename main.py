@@ -73,6 +73,12 @@ def ask_taskpilot():
     except Exception as e:
         return jsonify({"error": f"TaskPilot Error: {str(e)}"}), 500
 
+@app.route("/")
+def home():
+    return "✅ TaskMate backend is running!"
+
+    
+
 # ------------------ Run Server ------------------
 
 if __name__ == "__main__":
